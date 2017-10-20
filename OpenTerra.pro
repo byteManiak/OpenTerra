@@ -9,4 +9,6 @@ SOURCES += main.cpp
 HEADERS += \
     background.h \
     block.h \
-    structs.h
+    structs.h \
+    shaders.h \
+    text.h

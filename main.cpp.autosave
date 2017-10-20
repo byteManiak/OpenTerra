@@ -8,6 +8,7 @@
 #include "shaders.h"
 #include "background.h"
 #include "block.h"
+#include "text.h"
 
 // to do: move shaders either to their corresponding classes, or to a separate container
 
