@@ -4,7 +4,6 @@
 #include <ctime>
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include "background.h"
 #include "block.h"
@@ -49,6 +48,8 @@ const char* tex_frag[] =
     "void main()"
     "{ gl_FragColor = texture(tex, texC);\n }"
 };
+
+// to do: move shaders either to their corresponding classes, or to a separate container
 
 GLuint compile_shader(const char** v, const char **f)
 {

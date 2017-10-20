@@ -22,7 +22,7 @@ private:
     vec2_buffer *coords;
 };
 
-Block::Block(const char* path) : x(rand()%48 * 32), y(rand()%48 * 16)
+Block::Block(const char* path) : x(rand()%48 * 48), y(rand()%48 * 24)
 {
     FREE_IMAGE_FORMAT format = FreeImage_GetFileType(path);
 
@@ -33,27 +33,30 @@ Block::Block(const char* path) : x(rand()%48 * 32), y(rand()%48 * 16)
 
     glTexImage2D(GL_TEXTURE_2D, // target
                  0, // level, leave at 0
-                 GL_RGBA, // internal color bit mode
+                 GL_RGBA, // internal color bits
                  FreeImage_GetWidth(bitmap),
                  FreeImage_GetHeight(bitmap),
                  0, // border, leave at 0
-                 GL_BGRA, // external color bit mode
+                 GL_BGRA, // external color bits
                  GL_UNSIGNED_BYTE, // data type
                  FreeImage_GetBits(bitmap) /* pointer to data */ );
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // without setting these two parameters, there will be no texture on screen (i learned this the hard way)
+    /* without setting these two parameters, there will be no texture on screen
+     * GL_NEAREST provides "blocky" pixel transition
+     * GL_LINEAR provides "smooth" pixel transition (it also looks blurry)
+     */
 
     FreeImage_Unload(bitmap);
 
-    verts = new vec2_buffer( vec2(-1 + x/1366*2, -1 + y/768*2),
-                     vec2(-1 + x/1366*2 + .02, -1 + y/768*2),
-                     vec2(-1 + x/1366*2 + .02, -1 + y/768*2 + .04),
-                     vec2(-1 + x/1366*2, -1 + y/768*2 + .04));
+    verts = new vec2_buffer( vec2(-1 + x/1366*2, -1 + y/768*2 + 48.f/768),
+                             vec2(-1 + x/1366*2 + 48.f/1366, -1 + y/768*2 + 48.f/768),
+                             vec2(-1 + x/1366*2 + 48.f/1366, -1 + y/768*2),
+                             vec2(-1 + x/1366*2, -1 + y/768*2));
     // to do: base vertex data on position in a map
 
-    coords = new vec2_buffer( vec2(0, 0), vec2(1, 0), vec2(1, 1), vec2(0, 1) );
+    coords = new vec2_buffer( vec2(0, 1), vec2(1, 1), vec2(1, 0), vec2(0, 0) );
 
     glGenBuffers(1, &vert_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
@@ -83,7 +86,7 @@ void Block::Draw(GLuint *shader)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(glGetUniformLocation(*shader, "tex"), 0);
-    // bound texture to unit 0, and then unit 0 to shader sampler
+    // bound texture to unit 0, and then unit 0 to shader sampler2d
 
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, coord_buffer);
@@ -91,6 +94,8 @@ void Block::Draw(GLuint *shader)
     // shader location 1 stores the texture offset data
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    // vertex arrays have to be drawn separately, which is why there are two draw calls
 }
 
 #endif // BLOCK_H

@@ -31,10 +31,10 @@ struct vec4
 
 struct vec2_buffer
 {
-    vec2 bl, br, ur, ul; // bottom-left, bottom-right, upper-right, upper-left
+    vec2 tl, tr, br, bl; // top-left, top-right, bottom-right, bottom-left
 
     vec2_buffer(){}
-    vec2_buffer(vec2 bl, vec2 br, vec2 ur, vec2 ul) : bl(bl), br(br), ur(ur), ul(ul) {}
+    vec2_buffer(vec2 tl, vec2 tr, vec2 br, vec2 bl) : tl(tl), tr(tr), br(br), bl(bl) {}
 }; // a vec2_buffer basically acts as a SDL rectangle, but with one extra dimension added
 
 bool onscreen(vec2 t)
