@@ -12,21 +12,21 @@ class Block
 {
 public:
     Block(const char*);
-
-    void Draw(GLuint*);
+    ~Block();
+    void Draw(GLuint);
 
 private:
-    GLfloat x, y;
-    GLuint vert_buffer, coord_buffer, texture;
+    float x, y;
+    GLuint texture;
+    GLuint vbo, tbo;
+    GLuint vao;
     vec2_buffer *verts;
     vec2_buffer *coords;
 };
 
 Block::Block(const char* path) : x(rand()%48 * 48), y(rand()%48 * 24)
 {
-    FREE_IMAGE_FORMAT format = FreeImage_GetFileType(path);
-
-    FIBITMAP *bitmap = FreeImage_Load(format, path);
+    FIBITMAP *bitmap = FreeImage_Load(FIF_TARGA, path);
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -58,44 +58,57 @@ Block::Block(const char* path) : x(rand()%48 * 48), y(rand()%48 * 24)
 
     coords = new vec2_buffer( vec2(0, 1), vec2(1, 1), vec2(1, 0), vec2(0, 0) );
 
-    glGenBuffers(1, &vert_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2_buffer), verts, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &coord_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, coord_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2_buffer), coords, GL_STATIC_DRAW);
+    // creating a vertex array object is necessary so we can send vertex data to our shaders
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
     /* we will use two vertex buffers:
-     * one for the position of the texture on the screen,
-     * and the other one for the offset of the texture to be drawn on screen
-     */
-}
+     * one for the position of the rectangle on the screen,
+     * and the other one for the offset of the texture to be drawn inside the rectangle */
 
-void Block::Draw(GLuint *shader)
-{
-    glUseProgram(*shader);
-
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2_buffer), verts, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     // shader location 0 stores the position data
 
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(glGetUniformLocation(*shader, "tex"), 0);
-    // bound texture to unit 0, and then unit 0 to shader sampler2d
-
+    glGenBuffers(1, &tbo);
+    glBindBuffer(GL_ARRAY_BUFFER, tbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2_buffer), coords, GL_STATIC_DRAW);
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, coord_buffer);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
     // shader location 1 stores the texture offset data
 
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    // vertex arrays have to be drawn separately, which is why there are two draw calls
+    glBindVertexArray(0);
 }
 
+void Block::Draw(GLuint shader)
+{
+    glUseProgram(shader);
+    glBindVertexArray(vao);
+
+    /* only the vertex array needs to be bound, not the buffers too
+     * bind the buffers as well only if you need to update them */
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(glGetUniformLocation(shader, "tex"), 0);
+    // bound texture to unit 0, and then unit 0 to shader sampler2d
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+Block::~Block()
+{
+    delete verts;
+    delete coords;
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &tbo);
+    glDeleteTextures(1, &texture);
+    glDeleteVertexArrays(1, &vao);
+}
 #endif // BLOCK_H

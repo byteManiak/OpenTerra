@@ -2,14 +2,16 @@
 #define TEXT_H
 
 #include <GL/gl.h>
+#include <freetype/freetype.h>
 
-class Text
+extern FT_Library ftlib;
+
+struct Text
 {
-public:
-    Text(const char *text) : text(text) {}
+    Text(const char *text) : text(text) { FT_New_Face(ftlib, "LessPerfectDOSVGA.ttf", 0, &font); }
     ~Text() {}
 
-private:
+    FT_Face font;
     const char *text;
     GLuint texture;
     GLuint vert_buffer, coord_buffer;

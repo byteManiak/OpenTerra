@@ -1,16 +1,18 @@
 #include <iostream>
 #include <vector>
+#include <memory>
 #include <cstdlib>
 #include <ctime>
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <ft2build.h>
 #include "shaders.h"
 #include "background.h"
 #include "block.h"
 #include "text.h"
 
-// to do: move shaders either to their corresponding classes, or to a separate container
+FT_Library ftlib;
 
 GLuint compile_shader(const char** v, const char **f)
 {
@@ -89,10 +91,7 @@ int main()
 
     glewExperimental = GL_TRUE;
 
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    // creating a vertex array object is necessary so we can send vertex data to our shaders
+    FT_Init_FreeType(&ftlib);
 
     glClearColor(0, .4, .7, 1);
     /* in case something fails, the background or the entire screen will be cyan
@@ -106,10 +105,12 @@ int main()
 
     Background b;
 
-    std::vector<Block*> blocks;
-    for(int i = 0; i<400; i++) blocks.push_back(new Block("dirt.tga"));
+    std::vector< std::unique_ptr<Block> > blocks;
+    for(int i = 0; i<400; i++) blocks.emplace_back(new Block("dirt.tga"));
 
     glfwShowWindow(window);
+
+    time_t current_time = time(NULL);
 
     do
     {
@@ -119,8 +120,15 @@ int main()
 
         b.Draw(&bg);
 
-        for(auto i : blocks)
-            i->Draw(&tex_shader);
+        for(int i = 0; i < blocks.size(); i++)
+            blocks[i]->Draw(tex_shader);
+
+        if(time(NULL) - current_time == 1)
+        {
+            current_time = time(NULL);
+            while(blocks.size() > 0) blocks.erase(blocks.end()-1);
+            for(int i = 0; i<400; i++) blocks.emplace_back(new Block("dirt.tga"));
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
