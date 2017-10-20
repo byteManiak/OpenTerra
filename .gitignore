@@ -2,5 +2,6 @@
 a.out
 *.o
 Makefile
+OpenTerra
 LessPerfectDOSVGA.ttf
 *.autosave
