@@ -1,0 +1,5 @@
+*.pro.*
+a.out
+*.o
+Makefile
+LessPerfectDOSVGA.ttf
