@@ -14,44 +14,6 @@
 
 FT_Library ftlib;
 
-GLuint compile_shader(const char** v, const char **f)
-{
-    GLuint v_shad = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(v_shad, 1, v, NULL);
-    glCompileShader(v_shad);
-
-    GLint err;
-
-    glGetShaderiv(v_shad, GL_INFO_LOG_LENGTH, &err);
-
-    GLchar out_v[err];
-    glGetShaderInfoLog(v_shad, err, NULL, out_v);
-
-    if(err) std::cerr << out_v;
-
-    GLuint f_shad = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(f_shad, 1, f, NULL);
-    glCompileShader(f_shad);
-
-    glGetShaderiv(f_shad, GL_INFO_LOG_LENGTH, &err);
-
-    GLchar out_f[err];
-    glGetShaderInfoLog(f_shad, err, NULL, out_f);
-
-    if(err) std::cerr << out_f;
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, v_shad);
-    glAttachShader(program, f_shad);
-
-    glLinkProgram(program);
-
-    glDeleteShader(v_shad);
-    glDeleteShader(f_shad);
-
-    return program;
-}
-
 int main()
 {
     srand(time(NULL));
@@ -74,8 +36,8 @@ int main()
     const GLFWvidmode *vid_modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &num_modes);
 
     GLFWwindow *window =
-        glfwCreateWindow(vid_modes[num_modes-1].width,
-                         vid_modes[num_modes-1].height, // last video mode in the array is the maximum monitor resolution
+        glfwCreateWindow(vid_modes[1].width,
+                         vid_modes[1].height, // last video mode in the array is the maximum monitor resolution
                          "OpenTerra",
                          NULL, // setting this to glfwGetPrimaryMonitor() will make the window fullscreen
                          NULL /* this parameter can be changed to a second window
@@ -91,6 +53,13 @@ int main()
 
     glewExperimental = GL_TRUE;
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    bg = compile_shader(vert, frag);
+    tex_shader = compile_shader(tex_vert, tex_frag);
+    text_shader = compile_shader(tex_vert, text_frag);
+
     FT_Init_FreeType(&ftlib);
 
     glClearColor(0, .4, .7, 1);
@@ -100,35 +69,36 @@ int main()
 
     int w, h;
 
-    GLuint bg = compile_shader(vert, frag);
-    GLuint tex_shader = compile_shader(tex_vert, tex_frag);
-
     Background b;
 
     std::vector< std::unique_ptr<Block> > blocks;
-    for(int i = 0; i<400; i++) blocks.emplace_back(new Block("dirt.tga"));
+    for(int i = -10; i<10; i++)
+        for(int j = -10; j < 10; j++)
+        {
+            if((i > -10 && i < 9) && (j > -10 && j < 9)) continue;
+            blocks.emplace_back(new Block("block.tga", i*32, j*32, 32, 32,
+                                          (i+10)*32/360.f, (j+10)*32/360.f, 1));
+        }
 
     glfwShowWindow(window);
 
-    time_t current_time = time(NULL);
+    Text text("S", -5, 0);
+
+    resolution = new GLfloat[2];
 
     do
     {
         glfwGetWindowSize(window, &w, &h);
         glViewport(0, 0, w, h);
+        resolution[0] = w; resolution[1] = h;
         glClear(GL_COLOR_BUFFER_BIT);
 
-        b.Draw(&bg);
+        b.Draw();
 
         for(int i = 0; i < blocks.size(); i++)
-            blocks[i]->Draw(tex_shader);
+            blocks[i]->Draw();
 
-        if(time(NULL) - current_time == 1)
-        {
-            current_time = time(NULL);
-            while(blocks.size() > 0) blocks.erase(blocks.end()-1);
-            for(int i = 0; i<400; i++) blocks.emplace_back(new Block("dirt.tga"));
-        }
+        text.Draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

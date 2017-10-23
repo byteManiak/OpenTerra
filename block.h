@@ -7,24 +7,27 @@
 #include <GL/gl.h>
 #include <FreeImage.h>
 #include "structs.h"
+#include "shaders.h"
 
 class Block
 {
 public:
-    Block(const char*);
+    Block(const char*, int, int, int, int, float, float, float, float);
     ~Block();
-    void Draw(GLuint);
+    void Draw();
 
 private:
     float x, y;
+    GLfloat color[4];
+    GLuint vao;
     GLuint texture;
     GLuint vbo, tbo;
-    GLuint vao;
-    vec2_buffer *verts;
-    vec2_buffer *coords;
+    rec *verts;
+    rec *coords;
 };
 
-Block::Block(const char* path) : x(rand()%48 * 48), y(rand()%48 * 24)
+Block::Block(const char* path, int x, int y, int w, int h,
+             float r = 1, float g = 1, float b = 1, float a = 1) : x(x), y(y)
 {
     FIBITMAP *bitmap = FreeImage_Load(FIF_TARGA, path);
 
@@ -50,15 +53,14 @@ Block::Block(const char* path) : x(rand()%48 * 48), y(rand()%48 * 24)
 
     FreeImage_Unload(bitmap);
 
-    verts = new vec2_buffer( vec2(-1 + x/1366*2, -1 + y/768*2 + 48.f/768),
-                             vec2(-1 + x/1366*2 + 48.f/1366, -1 + y/768*2 + 48.f/768),
-                             vec2(-1 + x/1366*2 + 48.f/1366, -1 + y/768*2),
-                             vec2(-1 + x/1366*2, -1 + y/768*2));
+    verts = new_rec(x, y, w, h);
     // to do: base vertex data on position in a map
 
-    coords = new vec2_buffer( vec2(0, 1), vec2(1, 1), vec2(1, 0), vec2(0, 0) );
+    coords = new rec( vec2(0, 1), vec2(1, 1), vec2(1, 0), vec2(0, 0) );
 
-    // creating a vertex array object is necessary so we can send vertex data to our shaders
+    color[0] = r; color[1] = g; color[2] = b; color[3] = a;
+
+    // creating a vertex array object is necessary so we can send vertex data to our *shaders
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
@@ -68,33 +70,38 @@ Block::Block(const char* path) : x(rand()%48 * 48), y(rand()%48 * 24)
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2_buffer), verts, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(rec), verts, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     // shader location 0 stores the position data
 
     glGenBuffers(1, &tbo);
     glBindBuffer(GL_ARRAY_BUFFER, tbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2_buffer), coords, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(rec), coords, GL_STATIC_DRAW);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
     // shader location 1 stores the texture offset data
 
     glBindVertexArray(0);
 }
 
-void Block::Draw(GLuint shader)
+void Block::Draw()
 {
-    glUseProgram(shader);
+    glUseProgram(tex_shader);
     glBindVertexArray(vao);
+
+    glUniform2fv(glGetUniformLocation(tex_shader, "resolution"), 1, resolution);
 
     /* only the vertex array needs to be bound, not the buffers too
      * bind the buffers as well only if you need to update them */
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(glGetUniformLocation(shader, "tex"), 0);
-    // bound texture to unit 0, and then unit 0 to shader sampler2d
+    glUniform1i(glGetUniformLocation(tex_shader, "tex"), 0);
+
+    glUniform4fv(glGetUniformLocation(tex_shader, "color"), 1, color);
+    // bound texture to unit 0, and then unit 0 to *shader sampler2d
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 

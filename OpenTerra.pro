@@ -12,4 +12,5 @@ HEADERS += \
     block.h \
     structs.h \
     shaders.h \
-    text.h
+    text.h \
+    character.h
