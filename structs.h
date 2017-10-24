@@ -68,6 +68,7 @@ rec *new_rec(int x, int y, int w, int h)
     t->br.y = y+h;
     t->bl.x = x;
     t->bl.y = y+h;
+    return t;
 }
 
 #endif // STRUCTS_H

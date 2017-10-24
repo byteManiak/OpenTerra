@@ -17,7 +17,6 @@ public:
     void Draw();
 
 private:
-    float x, y;
     GLfloat color[4];
     GLuint vao;
     GLuint texture;
@@ -27,7 +26,7 @@ private:
 };
 
 Block::Block(const char* path, int x, int y, int w, int h,
-             float r = 1, float g = 1, float b = 1, float a = 1) : x(x), y(y)
+             float r = 1, float g = 1, float b = 1, float a = 1)
 {
     FIBITMAP *bitmap = FreeImage_Load(FIF_TARGA, path);
 

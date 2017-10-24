@@ -80,9 +80,9 @@ int main()
                                           (i+10)*32/360.f, (j+10)*32/360.f, 1));
         }
 
-    glfwShowWindow(window);
-
     Text text("S", -5, 0);
+
+    glfwShowWindow(window);
 
     resolution = new GLfloat[2];
 
@@ -95,7 +95,7 @@ int main()
 
         b.Draw();
 
-        for(int i = 0; i < blocks.size(); i++)
+        for(size_t i = 0; i < blocks.size(); i++)
             blocks[i]->Draw();
 
         text.Draw();

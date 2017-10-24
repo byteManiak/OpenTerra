@@ -31,13 +31,13 @@ Text::Text(const char *text, GLfloat x, GLfloat y) : text(text), x(x), y(y), ini
     FT_New_Face(ftlib, "LessPerfectDOSVGA.ttf", 0, &font);
     FT_Set_Pixel_Sizes(font, 0, 24);
 
-    for(int i = 0; i<strlen(text); i++)
+    for(size_t i = 0; i<strlen(text); i++)
         characters.emplace_back(new Character(text[i], font, x, y, init_x));
 }
 
 void Text::Draw()
 {
-    for(int i=0; i<strlen(text); i++)
+    for(size_t i=0; i<strlen(text); i++)
         characters[i]->Draw();
 }
 #endif // TEXT_H
